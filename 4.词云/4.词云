@@ -1,0 +1,25 @@
+#%%
+
+from wordcloud import WordCloud
+import jieba
+import numpy as np
+import PIL.Image as Image
+
+#%%
+
+text=open('2.txt',encoding="UTF-8").read()
+
+# 调用包PIL中的open方法,读取图片文件,通过numpy中的array方法生成数组
+mask_pic=np.array(Image.open("u=1349224682,799058389&fm=26&gp=0.jpg")) # 图片
+wordcloud=WordCloud(font_path="C:/Windows/Fonts/simfang.ttf",# 字体
+                    width=800,height=600, # 大小
+                    mask=mask_pic, # 背景图
+                    background_color="white", # 背景颜色
+                    max_font_size=150, # 字体最大值
+                    max_words=200, # 最大显示数字
+                    stopwords={'联系','电话','QQ','微信'}, # 设置停用词,不再词云中显示
+                    collocations=False # 关键词不重复
+                    ).generate(text)
+image=wordcloud.to_image()
+wordcloud.to_file('jd1.png')
+image.show()
