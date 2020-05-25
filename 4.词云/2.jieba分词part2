@@ -1,0 +1,18 @@
+#%%
+
+import jieba
+from collections import Counter
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+from PIL import Image
+import numpy as np
+import jieba.analyse
+from pyquery import PyQuery
+
+#%%
+
+santi_text = open('11197.csv', 'r', encoding='utf-8').read() #读取本地文档
+
+jieba.enable_parallel(4) # 开启并行分词模式，参数为并行进程数 
+
+jieba.load_userdict('userdict.txt')#加载外部 用户词典
