@@ -1,0 +1,99 @@
+#%%
+
+from keras.models import load_model
+%matplotlib inline
+import pandas as pd
+import matplotlib
+import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['font.sans-serif'] = ['SimHei']  
+plt.rcParams['axes.unicode_minus'] = False 
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.models import Sequential
+from keras.layers import Dense, Embedding, LSTM, SpatialDropout1D
+from sklearn.model_selection import train_test_split
+from keras.utils.np_utils import to_categorical
+from keras.callbacks import EarlyStopping
+from keras.layers import Dropout
+import jieba as jb
+import re
+
+#%%
+
+# 一、载入数据
+data=pd.read_csv("nCoV_900k_train.unlabled.csv",encoding='UTF-8')
+
+
+#%%
+
+# 二、数据清洗
+# (1)去掉多余列,并改名
+data.drop(["微博id","发布人账号","微博图片","微博视频","微博发布时间"],axis=1,inplace=True)
+data.rename(columns={ '微博中文内容': 'review','情感倾向':'label'},inplace=True)
+data.head(10)
+
+#%%
+
+# (2)删除缺失值和重复值
+data.dropna(subset=['review'],inplace=True)  # 删除缺失值
+data.drop_duplicates(inplace=True) # 删除重复值
+
+#%%
+
+# 数据清洗(删除除了字母,数字,汉字以外的所有符号)
+def remove_punctuation(line):
+    line = str(line)
+    if line.strip()=='':
+        return ''
+    rule = re.compile(u"[^a-zA-Z0-9\u4E00-\u9FA5]")
+    line = rule.sub('',line)
+    return line
+# 加载停用词
+def stopwordslist(filepath):  
+    stopwords = [line.strip() for line in open(filepath, 'r', encoding='utf-8').readlines()]  
+    return stopwords  
+stopwords = stopwordslist("chinesestopwords.txt")
+
+#%%
+
+# 调用清洗数据函数并查看
+data['clean_review'] = data['review'].apply(remove_punctuation)
+data.sample(10)
+
+#%%
+
+# 分词
+data['cut_review'] = data['clean_review'].apply(lambda x: " ".join([w for w in list(jb.cut(x)) if w not in stopwords]))
+data.head()
+
+#%%
+
+# 这里没用google的w词向量
+# 设置最频繁使用的50000个词(在texts_to_matrix是会取前MAX_NB_WORDS,会取前MAX_NB_WORDS列)
+MAX_NB_WORDS = 50000
+# 每条cut_review最大的长度
+MAX_SEQUENCE_LENGTH = 250
+# 设置Embeddingceng层的维度
+EMBEDDING_DIM = 100
+
+tokenizer = Tokenizer(num_words=MAX_NB_WORDS, filters='!"#$%&()*+,-./:;<=>?@[\]^_`{|}~', lower=True)
+tokenizer.fit_on_texts(data['cut_review'].values)
+word_index = tokenizer.word_index
+print('共有 %s 个不相同的词语.' % len(word_index))
+
+#%%
+
+X = tokenizer.texts_to_sequences(data['cut_review'].values)
+#填充X,让X的各个列的长度统一
+X = pad_sequences(X, maxlen=MAX_SEQUENCE_LENGTH)
+print(X.shape)
+
+#%%
+
+from keras.models import load_model
+
+#%%
+
+model = load_model('iris_model.h5')
+print('test before save:',model.predict(X))  
