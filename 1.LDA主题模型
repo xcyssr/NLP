@@ -1,0 +1,113 @@
+#%%
+
+# PLSA和LDA对比:区别在于他们去估计未知参数所采用的思想不同
+# PLSA用的是频率派思想,
+# LDA用的是贝叶斯派思想.
+
+#%%
+
+# LDA对邮件主题分类
+import numpy as np
+import pandas as pd
+import re
+
+#%%
+
+# 读入文件(pandas逼格更高)
+df =pd.read_csv("HillaryEmails.csv")
+# 扔掉两列,去掉数据中的Null值
+df=df[['Id','ExtractedBodyText']].dropna()
+
+#%%
+
+# 一、文本预处理
+def clean_email_text(text):
+    text=text.replace('\n'," ") # 删除,空格,新行
+    text=re.sub(r"-"," ",text) # 替换,-换空格
+    text=re.sub(r"\d+/\d+/\d+","",text) # 删除,所有日期
+    text = re.sub(r"[0-2]?[0-9]:[0-6][0-9]", "", text) #时间，没意义
+    text = re.sub(r"/[a-zA-Z]*[:\//\]*[A-Za-z0-9\-_]+\.+[A-Za-z0-9\.\/%&=\?\-_]+/i", "", text) #网址，没意义
+    pure_text = ''
+    for letter in text:
+        if letter.isalpha() or letter=='':
+            pure_text+=letter
+    # 再把那些删除特殊字符后落单的单词,直接排除
+    text = ' '.join(word for word in pure_text.split() if len(word)>1)
+    return text
+    # 至此,数据里只有干净的单词了
+
+#%%
+
+docs=df['ExtractedBodyText']
+docs=docs.apply(lambda s:clean_email_text(s))
+# 储存为数组
+
+#%%
+
+docs.head(1).values
+# 查看头部
+
+#%%
+
+doclist = docs.values
+# 转成列表
+
+# 二、LDA模型构建
+# 转Gensim语料库
+# 即使用分词库,如jieba等
+from gensim import corpora,models,similarities
+import gensim
+import json
+
+#%%
+
+# 人工停止词:
+stoplist = ['very', 'ourselves', 'am', 'doesn', 'through', 'me', 'against', 'up', 'just', 'her', 'ours', 
+            'couldn', 'because', 'is', 'isn', 'it', 'only', 'in', 'such', 'too', 'mustn', 'under', 'their', 
+            'if', 'to', 'my', 'himself', 'after', 'why', 'while', 'can', 'each', 'itself', 'his', 'all', 'once', 
+            'herself', 'more', 'our', 'they', 'hasn', 'on', 'ma', 'them', 'its', 'where', 'did', 'll', 'you', 
+            'didn', 'nor', 'as', 'now', 'before', 'those', 'yours', 'from', 'who', 'was', 'm', 'been', 'will', 
+            'into', 'same', 'how', 'some', 'of', 'out', 'with', 's', 'being', 't', 'mightn', 'she', 'again', 'be', 
+            'by', 'shan', 'have', 'yourselves', 'needn', 'and', 'are', 'o', 'these', 'further', 'most', 'yourself', 
+            'having', 'aren', 'here', 'he', 'were', 'but', 'this', 'myself', 'own', 'we', 'so', 'i', 'does', 'both', 
+            'when', 'between', 'd', 'had', 'the', 'y', 'has', 'down', 'off', 'than', 'haven', 'whom', 'wouldn', 
+            'should', 've', 'over', 'themselves', 'few', 'then', 'hadn', 'what', 'until', 'won', 'no', 'about', 
+            'any', 'that', 'for', 'shouldn', 'don', 'do', 'there', 'doing', 'an', 'or', 'ain', 'hers', 'wasn', 
+            'weren', 'above', 'a', 'at', 'your', 'theirs', 'below', 'other', 'not', 're', 'him', 'during', 'which']
+
+texts = [[word for word in doc.lower().split() if word not in stoplist] for doc in doclist]
+
+#%%
+
+texts[0]
+# 查看
+
+#%%
+
+# 三、建立语料库
+# 用词袋的方法,把每个单词用一个数字指代,即标记化,并把原文本变成一条长长的数组
+
+#%%
+
+dictionary=corpora.Dictionary(texts)
+# josn 自带功能,标记化
+
+corpus=[dictionary.doc2bow(text)for text in texts]
+# 出现词频统计
+
+lda = gensim.models.ldamodel.LdaModel(corpus=corpus, id2word=dictionary, num_topics=20)
+# LDA模型---至此模型已经训练完毕
+# LDA是无监督学习,并不知道能分多少类(即topics),所以要人为设定
+# topics分类越少,模糊度越高,topics属于超参选择,非常人为的一件事
+
+lda.print_topic(10, topn=5)
+# 查看第10号分类的前5个单词
+
+#%%
+
+# 对于深度学习发展现状,已经不在取决于是否能够写出框架,而是对参数的调参能力有很大要求
+
+#%%
+
+# 查看所有主题
+lda.print_topics(num_topics=20,num_words=5)
