@@ -1,0 +1,34 @@
+#%%
+
+#coding='utf-8'impo#coding='utf-8'
+import csv
+import jieba
+import pandas as pd
+import jieba
+from collections import Counter
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+from PIL import Image
+import numpy as np
+import jieba.analyse
+from pyquery import PyQuery
+
+#%%
+
+data=open('11197.csv',encoding="utf-8").read().split('\n')  #一行行的读取内容
+Rs2=[] #建立存储分词的列表
+
+#%%
+
+for i in range(len(data)):
+    result=[]
+    seg_list = jieba.cut(data[i])
+    for w in seg_list :#读取每一行分词 
+        result.append(w)
+    Rs2.append(result)#将该行分词写入列表形式的总分词列表
+#写入CSV
+file=open('E:\学习代码\\text.csv','w')
+writer = csv.writer(file)#定义写入格式
+file.write(str(Rs2))
+#writer.writerows(Rs2)#按行写入
+file.close()
