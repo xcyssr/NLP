@@ -1,11 +1,5 @@
 #%%
 
-# PLSA和LDA对比:区别在于他们去估计未知参数所采用的思想不同
-# PLSA用的是频率派思想,
-# LDA用的是贝叶斯派思想.
-
-#%%
-
 # LDA对邮件主题分类
 import numpy as np
 import pandas as pd
@@ -13,7 +7,7 @@ import re
 
 #%%
 
-# 读入文件(pandas逼格更高)
+# 读入文件
 df =pd.read_csv("HillaryEmails.csv")
 # 扔掉两列,去掉数据中的Null值
 df=df[['Id','ExtractedBodyText']].dropna()
